@@ -12,121 +12,81 @@ class RestDemoScreen extends StatefulWidget {
   State<RestDemoScreen> createState() => _RestDemoScreenState();
 }
 
-class _RestDemoScreenState extends State<RestDemoScreen> {
-  PostController controller = PostController();
-
-  @override
-  void initState() {
-    super.initState();
-    controller.getPosts();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Posts"),
-        leading: IconButton(
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text("Posts"),
+      leading: IconButton(
+          onPressed: () {
+            controller.getPosts();
+          },
+          icon: const Icon(Icons.refresh)),
+      actions: [
+        IconButton(
             onPressed: () {
-              controller.getPosts();
+              showNewPostFunction(context);
             },
-            icon: const Icon(Icons.refresh)),
-        actions: [
-          IconButton(
-              onPressed: () {
-                showNewPostFunction(context);
-              },
-              icon: const Icon(Icons.add))
-        ],
-      ),
-      body: SafeArea(
-        child: ListenableBuilder(
-            listenable: controller,
-            builder: (context, _) {
-              if (controller.error != null) {
-                return Center(
-                  child: Text(controller.error.toString()),
-                );
-              }
-
-              if (!controller.working) {
-                return Center(
-                  child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          for (Post post in controller.postList)
-                            GestureDetector(
-                              onTap: () {
-                                showPostDetails(context, post);
-                              },
-                              child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  margin: const EdgeInsets.only(bottom: 8),
-                                  decoration: BoxDecoration(
-                                      border:
-                                          Border.all(color: Colors.blueAccent),
-                                      borderRadius: BorderRadius.circular(16)),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        post.title,
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                      SizedBox(height: 8),
-                                      Text(post.body,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis),
-                                    ],
-                                  )),
-                            )
-                        ],
-                      )),
-                );
-              }
-              return const Center(
-                child: SpinKitChasingDots(
-                  size: 54,
-                  color: Colors.black87,
-                ),
+            icon: const Icon(Icons.add))
+      ],
+    ),
+    body: SafeArea(
+      child: ListenableBuilder(
+          listenable: controller,
+          builder: (context, _) {
+            if (controller.error != null) {
+              return Center(
+                child: Text(controller.error.toString()),
               );
-            }),
-      ),
-    );
-  }
+            }
 
-  showNewPostFunction(BuildContext context) {
-    AddPostDialog.show(context, controller: controller);
-  }
-
-  showPostDetails(BuildContext context, Post post) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(post.title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(post.body),
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () async {
-                controller.deletePost(post.id);
-                Navigator.of(context).pop();
-              },
-              child: Text("Delete"),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+            if (!controller.working) {
+              return Center(
+                child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (Post post in controller.postList)
+                          GestureDetector(
+                            onTap: () {
+                              showPostDetails(context, post);
+                            },
+                            child: Container(
+                                padding: const EdgeInsets.all(8),
+                                margin: const EdgeInsets.only(bottom: 8),
+                                decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.blueAccent),
+                                    borderRadius: BorderRadius.circular(16)),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      post.title,
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      post.body,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                )),
+                          )
+                      ],
+                    )),
+              );
+            }
+            return const Center(
+              child: SpinKitChasingDots(
+                size: 54,
+                color: Colors.black87,
+              ),
+            );
+          }),
+    ),
+  );
 }
 
 class AddPostDialog extends StatefulWidget {
@@ -261,6 +221,14 @@ class PostController with ChangeNotifier {
       print(e);
       print(st);
       error = e;
+      notifyListeners();
+    }
+  }
+  void fakeEditPost(int id, String newTitle, String newBody) {
+    if (posts.containsKey(id.toString())) {
+      Post post = posts[id.toString()];
+      post.title = newTitle;
+      post.body = newBody;
       notifyListeners();
     }
   }
