@@ -309,6 +309,15 @@ class PostController with ChangeNotifier {
       notifyListeners();
     }
   }
+  
+  void fakeEditPost(int id, String newTitle, String newBody) {
+    if (posts.containsKey(id.toString())) {
+      Post post = posts[id.toString()];
+      post.title = newTitle;
+      post.body = newBody;
+      notifyListeners();
+    }
+  }
 }
 
 class UserController with ChangeNotifier {
