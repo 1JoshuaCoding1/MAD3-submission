@@ -27,84 +27,91 @@ class _RestDemoScreenState extends State<RestDemoScreen> {
       appBar: AppBar(
         title: const Text("Posts"),
         leading: IconButton(
-            onPressed: () {
-              controller.getPosts();
-            },
-            icon: const Icon(Icons.refresh)),
+          onPressed: () {
+            controller.getPosts();
+          },
+          icon: const Icon(Icons.refresh),
+        ),
         actions: [
           IconButton(
-              onPressed: () {
-                showNewPostFunction(context);
-              },
-              icon: const Icon(Icons.add))
+            onPressed: () {
+              showNewPostFunction(context);
+            },
+            icon: const Icon(Icons.add),
+          )
         ],
       ),
       body: SafeArea(
         child: ListenableBuilder(
-            listenable: controller,
-            builder: (context, _) {
-              if (controller.error != null) {
-                return Center(
-                  child: Text(controller.error.toString()),
-                );
-              }
+          listenable: controller,
+          builder: (context, _) {
+            if (controller.error != null) {
+              return Center(
+                child: Text(controller.error.toString()),
+              );
+            }
 
-              if (!controller.working) {
-                return Center(
-                  child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          for (Post post in controller.postList)
-                            GestureDetector(
-                              onTap: () {
-                                showPostDetails(context, post);
-                              },
-                              child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  margin: const EdgeInsets.only(bottom: 8),
-                                  decoration: BoxDecoration(
-                                      border:
-                                          Border.all(color: Colors.blueAccent),
-                                      borderRadius: BorderRadius.circular(16)),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        post.title,
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                      SizedBox(height: 8),
-                                      Text(post.body,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis),
-                                    ],
-                                  )),
-                            )
-                        ],
-                      )),
-                );
-              }
-              return const Center(
-                child: SpinKitChasingDots(
-                  size: 54,
-                  color: Colors.black87,
+            if (!controller.working) {
+              return Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (Post post in controller.postList)
+                        GestureDetector(
+                          onTap: () {
+                            showPostDetails(context, post);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.blueAccent),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  post.title,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  post.body,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               );
-            }),
+            }
+            return const Center(
+              child: SpinKitChasingDots(
+                size: 54,
+                color: Colors.black87,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
-  showNewPostFunction(BuildContext context) {
+  void showNewPostFunction(BuildContext context) {
     AddPostDialog.show(context, controller: controller);
   }
 
-  showPostDetails(BuildContext context, Post post) {
+  void showPostDetails(BuildContext context, Post post) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -114,13 +121,13 @@ class _RestDemoScreenState extends State<RestDemoScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(post.body),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () async {
                 controller.deletePost(post.id);
                 Navigator.of(context).pop();
               },
-              child: Text("Delete"),
+              child: const Text("Delete"),
             ),
           ],
         ),
@@ -130,9 +137,12 @@ class _RestDemoScreenState extends State<RestDemoScreen> {
 }
 
 class AddPostDialog extends StatefulWidget {
-  static show(BuildContext context, {required PostController controller}) =>
+  static void show(BuildContext context, {required PostController controller}) =>
       showDialog(
-          context: context, builder: (dContext) => AddPostDialog(controller));
+        context: context,
+        builder: (dContext) => AddPostDialog(controller),
+      );
+
   const AddPostDialog(this.controller, {super.key});
 
   final PostController controller;
@@ -142,6 +152,7 @@ class AddPostDialog extends StatefulWidget {
 }
 
 class _AddPostDialogState extends State<AddPostDialog> {
+  final _formKey = GlobalKey<FormState>();
   late TextEditingController bodyC, titleC;
 
   @override
@@ -152,6 +163,13 @@ class _AddPostDialogState extends State<AddPostDialog> {
   }
 
   @override
+  void dispose() {
+    bodyC.dispose();
+    titleC.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AlertDialog(
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -159,30 +177,59 @@ class _AddPostDialogState extends State<AddPostDialog> {
       actions: [
         ElevatedButton(
           onPressed: () async {
-            widget.controller.makePost(
-                title: titleC.text.trim(), body: bodyC.text.trim(), userId: 1);
-            Navigator.of(context).pop();
+            if (_formKey.currentState?.validate() ?? false) {
+              await widget.controller.makePost(
+                title: titleC.text.trim(),
+                body: bodyC.text.trim(),
+                userId: 1,
+              );
+              Navigator.of(context).pop();
+            }
           },
           child: const Text("Add"),
         )
       ],
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("Title"),
-          Flexible(
-            child: TextFormField(
-              controller: titleC,
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Title"),
+            Flexible(
+              child: TextFormField(
+                controller: titleC,
+                decoration: const InputDecoration(
+                  hintText: "Enter title",
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a title';
+                  }
+                  return null;
+                },
+              ),
             ),
-          ),
-          const Text("Content"),
-          Flexible(
-            child: TextFormField(
-              controller: bodyC,
+            const SizedBox(height: 8),
+            const Text("Content"),
+            Flexible(
+              child: TextFormField(
+                controller: bodyC,
+                decoration: const InputDecoration(
+                  hintText: "Enter content",
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter content';
+                  }
+                  return null;
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -195,7 +242,7 @@ class PostController with ChangeNotifier {
 
   List<Post> get postList => posts.values.whereType<Post>().toList();
 
-  clear() {
+  void clear() {
     error = null;
     posts = {};
     notifyListeners();
@@ -207,10 +254,11 @@ class PostController with ChangeNotifier {
       required int userId}) async {
     try {
       working = true;
-      if (error != null) error = null;
+      error = null;
       http.Response res = await HttpService.post(
-          url: "https://jsonplaceholder.typicode.com/posts",
-          body: {"title": title, "body": body, "userId": userId});
+        url: "https://jsonplaceholder.typicode.com/posts",
+        body: {"title": title, "body": body, "userId": userId},
+      );
       if (res.statusCode != 200 && res.statusCode != 201) {
         throw Exception("${res.statusCode} | ${res.body}");
       }
@@ -222,7 +270,7 @@ class PostController with ChangeNotifier {
       working = false;
       notifyListeners();
       return output;
-    } catch (e, st) {
+    } catch (e) {
       error = e;
       working = false;
       notifyListeners();
@@ -234,19 +282,18 @@ class PostController with ChangeNotifier {
     try {
       working = true;
       clear();
-      List result = [];
       http.Response res = await HttpService.get(
           url: "https://jsonplaceholder.typicode.com/posts");
       if (res.statusCode != 200 && res.statusCode != 201) {
         throw Exception("${res.statusCode} | ${res.body}");
       }
-      result = jsonDecode(res.body);
+      List result = jsonDecode(res.body);
 
       List<Post> tmpPost = result.map((e) => Post.fromJson(e)).toList();
       posts = {for (Post p in tmpPost) "${p.id}": p};
       working = false;
       notifyListeners();
-    } catch (e, st) {
+    } catch (e) {
       error = e;
       working = false;
       notifyListeners();
@@ -257,9 +304,7 @@ class PostController with ChangeNotifier {
     try {
       posts.remove(id.toString());
       notifyListeners();
-    } catch (e, st) {
-      print(e);
-      print(st);
+    } catch (e) {
       error = e;
       notifyListeners();
     }
@@ -273,7 +318,7 @@ class UserController with ChangeNotifier {
 
   List<User> get userList => users.values.whereType<User>().toList();
 
-  getUsers() async {
+  Future<void> getUsers() async {
     try {
       working = true;
       List result = [];
@@ -288,16 +333,14 @@ class UserController with ChangeNotifier {
       users = {for (User u in tmpUser) "${u.id}": u};
       working = false;
       notifyListeners();
-    } catch (e, st) {
-      print(e);
-      print(st);
+    } catch (e) {
       error = e;
       working = false;
       notifyListeners();
     }
   }
 
-  clear() {
+  void clear() {
     users = {};
     notifyListeners();
   }
