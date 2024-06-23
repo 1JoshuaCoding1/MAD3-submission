@@ -129,10 +129,22 @@ class _RestDemoScreenState extends State<RestDemoScreen> {
               },
               child: const Text("Delete"),
             ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                showEditPostFunction(context, post);
+              },
+              child: const Text("Edit"),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  void showEditPostFunction(BuildContext context, Post post) {
+    EditPostDialog.show(context, controller: controller, post: post);
   }
 }
 
@@ -187,6 +199,106 @@ class _AddPostDialogState extends State<AddPostDialog> {
             }
           },
           child: const Text("Add"),
+        )
+      ],
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Title"),
+            Flexible(
+              child: TextFormField(
+                controller: titleC,
+                decoration: const InputDecoration(
+                  hintText: "Enter title",
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a title';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text("Content"),
+            Flexible(
+              child: TextFormField(
+                controller: bodyC,
+                decoration: const InputDecoration(
+                  hintText: "Enter content",
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter content';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class EditPostDialog extends StatefulWidget {
+  static void show(BuildContext context, {required PostController controller, required Post post}) =>
+      showDialog(
+        context: context,
+        builder: (dContext) => EditPostDialog(controller, post),
+      );
+
+  const EditPostDialog(this.controller, this.post, {super.key});
+
+  final PostController controller;
+  final Post post;
+
+  @override
+  State<EditPostDialog> createState() => _EditPostDialogState();
+}
+
+class _EditPostDialogState extends State<EditPostDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController bodyC, titleC;
+
+  @override
+  void initState() {
+    super.initState();
+    bodyC = TextEditingController(text: widget.post.body);
+    titleC = TextEditingController(text: widget.post.title);
+  }
+
+  @override
+  void dispose() {
+    bodyC.dispose();
+    titleC.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      title: const Text("Edit post"),
+      actions: [
+        ElevatedButton(
+          onPressed: () async {
+            if (_formKey.currentState?.validate() ?? false) {
+              widget.controller.fakeEditPost(
+                widget.post.id,
+                titleC.text.trim(),
+                bodyC.text.trim(),
+              );
+              Navigator.of(context).pop();
+            }
+          },
+          child: const Text("Edit"),
         )
       ],
       content: Form(
@@ -309,6 +421,15 @@ class PostController with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void fakeEditPost(int id, String newTitle, String newBody) {
+    if (posts.containsKey(id.toString())) {
+      Post post = posts[id.toString()];
+      post.title = newTitle;
+      post.body = newBody;
+      notifyListeners();
+    }
+  }
 }
 
 class UserController with ChangeNotifier {
@@ -370,8 +491,8 @@ class HttpService {
 
 class Post {
   final int id;
-  final String title;
-  final String body;
+  String title;
+  String body;
   final int userId;
 
   Post({required this.id, required this.title, required this.body, required this.userId});
